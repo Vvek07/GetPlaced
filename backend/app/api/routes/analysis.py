@@ -78,6 +78,8 @@ async def create_analysis(
     """
     Analyze resume against job description and return ATS score with detailed feedback
     """
+    global ML_SERVICES_AVAILABLE  # Declare as global to modify module-level variable
+    
     # Try to ensure ML packages are available
     if not ML_SERVICES_AVAILABLE:
         logger.info("Attempting to install ML packages at runtime...")
