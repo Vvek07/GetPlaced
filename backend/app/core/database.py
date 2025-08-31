@@ -3,9 +3,20 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Validate DATABASE_URL
+if not settings.DATABASE_URL or settings.DATABASE_URL.strip() == "":
+    logger.error("DATABASE_URL is empty or not set. Using default SQLite.")
+    database_url = "sqlite:///./ats.db"
+else:
+    database_url = settings.DATABASE_URL
+    logger.info(f"Using database: {database_url.split('@')[0]}@***" if '@' in database_url else database_url)
 
 # Create database engine
-engine = create_engine(settings.DATABASE_URL)
+engine = create_engine(database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class for models

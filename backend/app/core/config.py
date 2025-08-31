@@ -1,10 +1,11 @@
 from pydantic_settings import BaseSettings
 from typing import List
+import os
 
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "sqlite:///./ats.db"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ats.db")
     
     # Security
     SECRET_KEY: str = "your-secret-key-here"
