@@ -5,10 +5,29 @@ from contextlib import asynccontextmanager
 from decouple import config
 import uvicorn
 import os
+import logging
 
+# Import core modules
 from app.core.config import settings
-from app.api.routes import auth, users, jobs, resumes, matching, analysis
 from app.core.database import init_db
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Import routes with error handling
+try:
+    from app.api.routes import auth, users, jobs, resumes, matching, analysis
+    ROUTES_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Some routes may not be available due to missing dependencies: {e}")
+    # Import only essential routes
+    try:
+        from app.api.routes import auth, users
+        ROUTES_AVAILABLE = False
+    except ImportError:
+        logger.error("Critical error: Cannot import essential routes")
+        ROUTES_AVAILABLE = False
 
 
 @asynccontextmanager
@@ -37,13 +56,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Include routers with error handling
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
-app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
-app.include_router(resumes.router, prefix="/resumes", tags=["Resumes"])
-app.include_router(matching.router, prefix="/matching", tags=["Matching"])
-app.include_router(analysis.router, prefix="/analyses", tags=["Analysis"])
+
+if ROUTES_AVAILABLE:
+    try:
+        app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
+        app.include_router(resumes.router, prefix="/resumes", tags=["Resumes"])
+        app.include_router(matching.router, prefix="/matching", tags=["Matching"])
+        app.include_router(analysis.router, prefix="/analyses", tags=["Analysis"])
+        logger.info("All routes loaded successfully")
+    except Exception as e:
+        logger.warning(f"Some advanced routes not available: {e}")
+else:
+    logger.info("Running in minimal mode - only auth and users available")
 
 
 @app.get("/")

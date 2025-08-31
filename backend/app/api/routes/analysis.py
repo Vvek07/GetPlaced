@@ -4,6 +4,9 @@ from typing import List, Optional
 import base64
 import os
 import tempfile
+import subprocess
+import sys
+import logging
 
 from app.core.database import get_db
 from app.models.user import User
@@ -11,10 +14,55 @@ from app.models.resume import Resume
 from app.models.analysis import Analysis
 from app.schemas.analysis import AnalysisResponse, AnalysisRequest
 from app.api.routes.auth import get_current_active_user
-from app.services.ats_analyzer import ATSAnalyzer
-from app.services.resume_parser import ResumeParser
 
+# Runtime import with fallback
+try:
+    from app.services.ats_analyzer import ATSAnalyzer
+    from app.services.resume_parser import ResumeParser
+    ML_SERVICES_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"ML services not available: {e}")
+    ML_SERVICES_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Track if ML packages have been installed
+ml_packages_installed = False
+
+def ensure_ml_packages():
+    """Ensure ML packages are installed at runtime."""
+    global ml_packages_installed
+    
+    if ml_packages_installed:
+        return True
+        
+    try:
+        # Try to install required packages
+        packages = ["spacy>=3.4.0", "scikit-learn>=1.0.0", "numpy>=1.21.0", "pandas>=1.3.0"]
+        
+        for package in packages:
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", package], 
+                             check=True, capture_output=True, text=True, timeout=30)
+                logger.info(f"Installed {package}")
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                logger.warning(f"Failed to install {package}: {e}")
+        
+        # Try to download spaCy model
+        try:
+            subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"], 
+                         check=True, capture_output=True, text=True, timeout=60)
+            logger.info("Downloaded spaCy model")
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            logger.warning("Could not download spaCy model")
+        
+        ml_packages_installed = True
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to install ML packages: {e}")
+        return False
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -30,6 +78,28 @@ async def create_analysis(
     """
     Analyze resume against job description and return ATS score with detailed feedback
     """
+    # Try to ensure ML packages are available
+    if not ML_SERVICES_AVAILABLE:
+        logger.info("Attempting to install ML packages at runtime...")
+        if ensure_ml_packages():
+            # Try to import services again
+            try:
+                global ATSAnalyzer, ResumeParser
+                from app.services.ats_analyzer import ATSAnalyzer
+                from app.services.resume_parser import ResumeParser
+                ML_SERVICES_AVAILABLE = True
+                logger.info("ML services now available")
+            except ImportError as e:
+                logger.error(f"Still cannot import ML services: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Resume analysis services are currently unavailable. Please try again later."
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Resume analysis services are currently unavailable. Please try again later."
+            )
     # Ensure we have either a file or resume_id
     if not resume_file and not resume_id:
         raise HTTPException(
