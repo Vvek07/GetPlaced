@@ -2,7 +2,7 @@
 const nextConfig = {
   async rewrites() {
     const apiUrl = process.env.NODE_ENV === 'production' 
-      ? process.env.NEXT_PUBLIC_API_URL || 'https://getplaced-backend.railway.app'
+      ? process.env.NEXT_PUBLIC_API_URL || 'https://getplaced-production.up.railway.app'
       : 'http://127.0.0.1:8000'
     
     return [
