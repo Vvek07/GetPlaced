@@ -4,16 +4,26 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from app.core.config import settings
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
+# Debug environment variables
+logger.info(f"Environment DATABASE_URL: {os.environ.get('DATABASE_URL', 'NOT_SET')}")
+logger.info(f"Settings DATABASE_URL: {settings.DATABASE_URL}")
+
 # Validate DATABASE_URL
-if not settings.DATABASE_URL or settings.DATABASE_URL.strip() == "":
-    logger.error("DATABASE_URL is empty or not set. Using default SQLite.")
-    database_url = "sqlite:///./ats.db"
+if not settings.DATABASE_URL or settings.DATABASE_URL.strip() == "" or settings.DATABASE_URL == "sqlite:///./ats.db":
+    if os.environ.get('DATABASE_URL'):
+        # Railway sets it but pydantic isn't picking it up
+        database_url = os.environ.get('DATABASE_URL')
+        logger.info(f"Using Railway DATABASE_URL from environment: {database_url[:50]}...")
+    else:
+        logger.warning("DATABASE_URL is empty or not set. Using default SQLite.")
+        database_url = "sqlite:///./ats.db"
 else:
     database_url = settings.DATABASE_URL
-    logger.info(f"Using database: {database_url.split('@')[0]}@***" if '@' in database_url else database_url)
+    logger.info(f"Using database from settings: {database_url.split('@')[0]}@***" if '@' in database_url else database_url)
 
 # Create database engine
 engine = create_engine(database_url)

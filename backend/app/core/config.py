@@ -4,8 +4,12 @@ import os
 
 
 class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ats.db")
+    # Database - Try multiple environment variable approaches
+    DATABASE_URL: str = (
+        os.environ.get("DATABASE_URL") or 
+        os.getenv("DATABASE_URL") or 
+        "sqlite:///./ats.db"
+    )
     
     # Security
     SECRET_KEY: str = "your-secret-key-here"
