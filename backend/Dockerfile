@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies (minimal for faster build)
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir fastapi==0.104.1 uvicorn[standard]==0.24.0 sqlalchemy==2.0.23 python-multipart==0.0.6 python-jose[cryptography]==3.3.0 passlib[bcrypt]==1.7.4 python-decouple==3.8 pydantic==2.5.0 pydantic-settings==2.1.0 email-validator==2.1.0 PyPDF2==3.0.1 requests==2.31.0 aiofiles==23.2.1
+RUN pip install --no-cache-dir fastapi==0.104.1 uvicorn[standard]==0.24.0 sqlalchemy==2.0.23 python-multipart==0.0.6 python-jose[cryptography]==3.3.0 passlib[bcrypt]==1.7.4 python-decouple==3.8 pydantic==2.5.0 pydantic-settings==2.1.0 email-validator==2.1.0 PyPDF2==3.0.1 requests==2.31.0 aiofiles==23.2.1 psycopg2-binary==2.9.9
 
 # Copy application code
 COPY . .
