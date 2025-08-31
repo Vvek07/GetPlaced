@@ -81,7 +81,7 @@ function NewAnalysisForm({ onAnalysisComplete }: NewAnalysisFormProps) {
       }
 
       const token = localStorage.getItem('token')
-      const response = await fetch('http://127.0.0.1:8000/analyses/analyze', {
+      const response = await fetch('/api/analyses/analyze', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -532,7 +532,7 @@ export default function StudentDashboard() {
     setLoadingAnalyses(true)
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://127.0.0.1:8000/analyses/', {
+      const response = await fetch('/api/analyses/', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

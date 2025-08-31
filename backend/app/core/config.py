@@ -13,7 +13,14 @@ class Settings(BaseSettings):
     
     # Application
     DEBUG: bool = True
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000", 
+        "http://localhost:3001", 
+        "http://127.0.0.1:3001",
+        "https://*.vercel.app",
+        "https://getplaced.vercel.app"
+    ]
     
     # File Storage
     UPLOAD_DIRECTORY: str = "./uploads"

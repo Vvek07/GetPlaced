@@ -4,6 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
 from decouple import config
 import uvicorn
+import os
 
 from app.core.config import settings
 from app.api.routes import auth, users, jobs, resumes, matching, analysis
@@ -63,10 +64,11 @@ async def health_check():
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=settings.DEBUG,
         log_level="info"
     )
