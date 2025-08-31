@@ -16,18 +16,44 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import routes with error handling
+ESSENTIAL_ROUTES_AVAILABLE = False
+ADVANCED_ROUTES_AVAILABLE = False
+ANALYSIS_ROUTES_AVAILABLE = False
+
 try:
     from app.api.routes import auth, users, jobs, resumes, matching, analysis
     ROUTES_AVAILABLE = True
+    ESSENTIAL_ROUTES_AVAILABLE = True
+    ADVANCED_ROUTES_AVAILABLE = True
+    ANALYSIS_ROUTES_AVAILABLE = True
+    logger.info("All routes imported successfully")
 except ImportError as e:
     logger.warning(f"Some routes may not be available due to missing dependencies: {e}")
-    # Import only essential routes
+    # Import essential routes and try to import analysis separately
     try:
         from app.api.routes import auth, users
-        ROUTES_AVAILABLE = False
+        ESSENTIAL_ROUTES_AVAILABLE = True
     except ImportError:
         logger.error("Critical error: Cannot import essential routes")
-        ROUTES_AVAILABLE = False
+        ESSENTIAL_ROUTES_AVAILABLE = False
+    
+    # Try to import other routes individually
+    try:
+        from app.api.routes import jobs, resumes, matching
+        ADVANCED_ROUTES_AVAILABLE = True
+    except ImportError:
+        logger.warning("Advanced routes (jobs, resumes, matching) not available")
+        ADVANCED_ROUTES_AVAILABLE = False
+    
+    try:
+        from app.api.routes import analysis
+        ANALYSIS_ROUTES_AVAILABLE = True
+        logger.info("Analysis routes imported successfully")
+    except ImportError as e:
+        logger.warning(f"Analysis routes not available: {e}")
+        ANALYSIS_ROUTES_AVAILABLE = False
+    
+    ROUTES_AVAILABLE = False
 
 
 @asynccontextmanager
@@ -57,8 +83,10 @@ app.add_middleware(
 )
 
 # Include routers with error handling
-app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(users.router, prefix="/users", tags=["Users"])
+if ESSENTIAL_ROUTES_AVAILABLE:
+    app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+    app.include_router(users.router, prefix="/users", tags=["Users"])
+    logger.info("Essential routes (auth, users) loaded")
 
 if ROUTES_AVAILABLE:
     try:
@@ -69,8 +97,23 @@ if ROUTES_AVAILABLE:
         logger.info("All routes loaded successfully")
     except Exception as e:
         logger.warning(f"Some advanced routes not available: {e}")
+elif ADVANCED_ROUTES_AVAILABLE:
+    try:
+        app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
+        app.include_router(resumes.router, prefix="/resumes", tags=["Resumes"])
+        app.include_router(matching.router, prefix="/matching", tags=["Matching"])
+        logger.info("Advanced routes loaded")
+    except Exception as e:
+        logger.warning(f"Advanced routes not available: {e}")
+
+if ANALYSIS_ROUTES_AVAILABLE:
+    try:
+        app.include_router(analysis.router, prefix="/analyses", tags=["Analysis"])
+        logger.info("Analysis routes loaded successfully")
+    except Exception as e:
+        logger.warning(f"Analysis routes not available: {e}")
 else:
-    logger.info("Running in minimal mode - only auth and users available")
+    logger.info("Analysis routes not available - running without ML features")
 
 
 @app.get("/")
