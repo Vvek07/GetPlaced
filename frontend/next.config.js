@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
+    // Ensure HTTPS for production Railway backend
     const apiUrl = process.env.NODE_ENV === 'production' 
       ? process.env.NEXT_PUBLIC_API_URL || 'https://getplaced-production.up.railway.app'
       : 'http://127.0.0.1:8000'
+    
+    console.log('API URL:', apiUrl) // Debug log
     
     return [
       {
