@@ -1,0 +1,12 @@
+{
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://getplaced-production.up.railway.app"
+    }
+  },
+  "functions": {
+    "app/api/**": {
+      "maxDuration": 30
+    }
+  }
+}
